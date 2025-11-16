@@ -1,0 +1,251 @@
+---
+title: "Data Types"
+author: "Tejashvee"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction to Data structures
+
+R's base data structures are organised by their dimensionality (1d,2d, or nd) and whether they're homogenous (all contents must be of the same type) or heterogeneous (the contents can be of different types):
+
+Homogeneous \|Heterogeneous;
+
+**1d** : Atomic Vector \|List
+
+**2d** : Matrix \|Data Frame
+
+**nd** : Arrays
+
+# Vectors
+
+Vectors come in two flavours: atomic vectors and lists. They have three common properties. Type, *typeof()*, what it is; Length, *length()*, how many elements it contains; Attributes, *attributes()*, additional arbitrary meta data. They differ in the types of their elements: **all elements of an atomic vector must be the same type** whereas **the elements of a list can have different types**.
+
+## Atomic Vectors
+
+There are four common types of atomic vectors: logical, integer, double (often called a numeric) and character. Atomic vectors are usually created with c(), short for combine.
+
+```{r}
+dbl_var <- c(1,2.5,4.5)
+int_var <- c(1L,6L,10L)
+c(TRUE, FALSE, T, F) -> log_var
+chr_var <- c("These are", "some strings")
+class(dbl_var)
+class(int_var)
+class(log_var)
+class(chr_var)
+c(1,c(2, c(3,4)))
+
+```
+
+### Coercion
+
+All elements of an atomic vector must be the same type, so when you attempt to combine different types they will be coerced to the most flexible type. The coercion rules go: logical-\> integer-\> double -\> complex -\> character, where '-\>' can be read as transformed into. You can try to force coercion against this flow using **as.** functions
+
+Challenge 1
+
+```{r}
+a<- c("a",1)
+b<- c(TRUE, 1)
+c<- c(1L, 10)
+d<- c(a,b,c)
+typeof(a)
+typeof(b)
+typeof(c)
+typeof(d)
+```
+
+When a logical vector is coerced to an integer or double, **TRUE** becomes **1** and **FALSE** becomes **0**. This is very useful in conjunction with sum() and mean()
+
+```{r}
+x<-c(FALSE, FALSE, TRUE)
+as.numeric(x)
+sum(x) #total number of trues
+mean(x) #Proportion that are TRUE
+
+```
+
+Coercion often happens automatically. Most mathematical (+,log, abs, etc.) will coerce to a double or integer and most logical operations (&, \|, any, etcetera) will coerce to a logical. You will usually get a warning message if the coercion might lose information. If confusion is likely, explicitly coerce with as.character(), as.double(), as.integer() or as.logical.
+
+## Lists
+
+Lists are different from atomic vectors because their elements can be of any type, including **lists**. This makes them fundamentally different from atomic vectors
+
+```{r}
+x<-list(1:3, "a",c(TRUE, FALSE, TRUE), c(2.3,5.9))
+str(x)
+```
+
+Lists are sometimes called **recursive** vectors, because a list can contain other lists. This makes them fundamentally different from atomic vectors.
+
+```{r}
+x<-list(list(list(list())))
+str(x)
+is.recursive(x)
+```
+
+c() will combine several lists into one. If given a combination of atomic vectors and lists, c() will coerce the vectors to lists before combining them. Compare the results of list() and c():
+
+```{r}
+x<-list(list(1,2),c(3,4))
+y<-c(list(1,2), c(3,4))
+str(x)
+str(y)
+```
+
+The typeof() a list, is list 🙄. You can test for a list with is.list() and coerce to a list with as.list(). You can turn a list into an atomic vector with **unlist()**. If the elements of the list have different types, unlist(), uses the same coercion rules as c().
+
+Lists are used to build up many of the more complicated data structures in R. For example, both data frames and linear models objects (as produced by lm()) are lists:
+
+```{r}
+mtcars
+is.list(mtcars)
+mod<-lm(mpg ~wt, data=mtcars)
+mod
+is.list(mod)
+```
+
+## Attributes
+
+All objects can have arbitrary additional attributes, used to store metadata about the object. Attributes can be thought of as named list(with unique names). Attributes can be accessed individually with attr() or all at one (as a list) with attributes.
+
+The three most important attributes: \* Names, a character vector giving each element a name \* Dimensions, used to turn vectors into matrices and arrays \* Class, used to implement the S3 object system
+
+Each of these attributes has a specific accessor function to get and set values. When working with these attributes, use names(x), dim(x) and class(x).
+
+### Names
+
+Three ways to use names: 1. When creating it: Names don't have to be unique and not all elements of a vector need to have a name. If somes names are missing, names() will return an empty string for those elements. If all elements are missing, names() will return NULL.
+
+```{r}
+x<- c(a=1, b=2, c=3)
+x
+names(x)
+#By modifying an existing vector in place:
+x<-1:3; names(x)<-c("a","b","c")
+x
+#By creating a modified copy of a vector:
+x<-1:3
+x<- setNames(x, c("a","b","c"))
+x
+y<-c(a=1,2,3) # 1 is assigned to a, but 2 and 3 are not assigned to any variables
+names(y)
+z<-c(1,2,3)
+names(z)
+unname(x); x
+names(x)<-NULL; x
+```
+
+### Factors
+
+One important use of attributes is to define factors. A factor is a vector that can contain only predefined values, and is used to store categorical data. Factors are built on top of integer vectors using two attributes: the class(), factor()- which makes them behave differently from regular integer vectors, and the levels(), which defines the set of allowed values.
+
+```{r}
+x<-c("a","b","b","a")
+x
+x<-factor(x)
+x
+class(x)
+levels(x)
+x[2] <- "c" #you cannot use values that are not in the levels
+x
+c(x, factor("b")) #NB: Combining factors will produce unwanted results
+class(c(x, factor("b")))
+```
+
+Factors are useful when you know the possible values a variable may take. Using a factor instead of a character vector makes it obvious when some groups contain no observations:
+
+```{r}
+sex_char <-c("m","m","m")
+sex_factor<-factor(sex_char, levels=c("m","f"))
+table(sex_char)
+table(sex_factor)
+```
+
+### Matrices and Arrays
+
+Adding a dim() attribute to an atomic vector allows it to behave like a multi-dimensional array. A special case of the array is the matrix, which has two dimensions. Matrices are used commonly as part of the mathematical machinery of statistics. Arrays are much rarer, but worth being aware of.
+
+Matrices and arrays are created with matrix() and array(), or by using assignment form of dim()
+
+```{r}
+#Two scalar arguements to specify rows and columns
+a<- matrix(1:6, ncol=3, nrow=2)
+#One vector arguement to describe all dimensions 
+b<- array(1:12, c(2,3,2))
+
+#You can also modify an object in place by setting dim()
+c<-1:12
+dim(c) <- c(3,4)
+c
+dim(c) <-c(4,3)
+c
+dim(c) <-c(2,3,2)
+c
+```
+
+An object can be tested if it is a matrix or array using *is.matrix()* and *is.array()* or by looking at the length of the *dim()*. *as.matrix()* and *as.array()* make it easy to turn an existing vector into a matrix or array.
+
+# Data Frames
+
+A data frame is the most common way of storing data in R, and if used systematically makes data analysis easier. Under the hood, a data frame is a list of equal-length vectors. This makes it a 2-dimensional structure, so it shares properties of both the matrix and the list.
+
+**head()** shows first 6 rows;
+
+**tail()** shows last 6 rows;
+
+**dim()** returns the dimensions of data frame (i.e. number of rows and number of columns)
+
+**nrow()** number of rows
+
+**ncol()** number of columns
+
+**str()** structure of data frame - name, type and preview of data in each column
+
+**names()** shows the names attribute for a data frame, which gives the column names
+
+**sapply(dataframe, class)** - shows the class of each column in the data frame
+
+## Creation
+
+You create a data frame using data.frame(), which takes names vectors as input:
+
+```{r}
+df<- data.frame(x=1:3, y= c("a","b","c"))
+str(df)
+```
+
+Beware data.frame()'s default behaviour which turns strings into factors. Use *stringAsFactors*=FALSE to suppress this behaviour.
+
+```{r}
+df<-data.frame(
+  x= 1:3 ,
+  y=c("a","b","c"),
+  stringsAsFactors = FALSE)
+str(df)
+
+```
+
+## Testing and Coercion
+
+Because a data.frame is an S3 class, its type reflects the underlying vector used to build it: the list. To check if an object is a data frame, use class() or test explicitly with is.data.frame();
+
+```{r}
+is.vector(df)
+is.list(df)
+is.data.frame(df)
+typeof(df)
+class(df)
+```
+
+You can coerce an object to a data frame with *as.data.frame()*:
+
+-    A vector will create a one-column data frame.
+
+-   A list will create one column for each statement; it's an error if they are not all the same length.
+
+-   A matrix will create a data frame with the same number of columns and rows as the matrix.
